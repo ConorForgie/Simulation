@@ -14,6 +14,15 @@ double L2Norm(std::vector<double> &);
 
 int main()
 {
+	// Testing
+	/*std::vector<std::vector<double> > mat = { {2,0},{0,2} };
+	std::vector<double> v = { 3,4 };
+	std::vector<double> res = MatrixVecMult(mat, v);
+	for (int i = 0; i < res.size(); i++)
+		std::cout << res[i] << std::endl;
+	double l2n = L2Norm(v);
+	std::cout << "L2norm " << l2n << std::endl;*/
+
 	const int n2steps = 10;
 	const int M = 10000;
 	
@@ -21,9 +30,8 @@ int main()
 	//Run Calcs and only save end values
 	std::vector<double> Xs(n2steps);
 
-
-
 	std::cout << "Running in Serial" << std::endl;
+    
 	time_t start = time(0);
 	for (int m = 0; m < M; m++)
 	{
@@ -34,6 +42,8 @@ int main()
 	time_t end = time(0);
 	double time = difftime(end, start);
 	
+    
+    // Console Output - the error results
 	for (int i = 0; i < Xs.size(); i++)
 	{
 		Xs[i] = std::sqrt(Xs[i] / M);
@@ -41,7 +51,7 @@ int main()
 	}
 	std::cout << std::endl;
 	std::cout << "Elapsed time in seconds: " << time << "s" << std::endl;
-	// std::cin.get();
+	 std::cin.get(); // For VS
 	return 1;
 }
 
@@ -60,7 +70,7 @@ std::vector<double> RunMC(int n2steps_)
 
 	std::default_random_engine generator;
 	std::normal_distribution<double> distribution(0.0, 1.0);
-	std::vector<double> Xs(n2steps_);
+	//std::vector<double> Xs(n2steps_);
 	std::vector<std::vector<double> > Xn(n2steps_, std::vector<double>(2,1)); // Initialise matrix of ones
 	
 	//Generate Random Number Arrays
@@ -78,16 +88,15 @@ std::vector<double> RunMC(int n2steps_)
 		{
 			if (n % Narr[n2steps_ - 1 - i] == 0)
 			{
-				std::vector<double> X = Xn.at(i);
 				std::vector<double> z = { randn1[n], randn2[n] };
 				double h = T / Narr[i];
-				double tamedCoeff = 1 / (1 + std::pow(n, -1 / 2) * L2Norm(X));
+				double l2nX = L2Norm(Xn[i]);
+				double tamedCoeff = 1 / (1 + std::pow(n, -1 / 2) * l2nX);
 				std::vector<double> etaZ = MatrixVecMult(eta, z);
-				double l2nX = L2Norm(X);
 
-				for (int j = 0; j < X.size(); j++)
+				for (int j = 0; j < Xn[i].size(); j++)
 				{
-					Xn[i][j] += X[j] * (lambda * (mu - l2nX)) * h * tamedCoeff + etaZ[j] * tamedCoeff * std::pow(l2nX, 3 / 2) * std::sqrt(h);
+					Xn[i][j] += Xn[i][j] * (lambda * (mu - l2nX)) * h * tamedCoeff + etaZ[j] * tamedCoeff * std::pow(l2nX, 3 / 2) * std::sqrt(h);
 
 				}
 			}
@@ -95,15 +104,18 @@ std::vector<double> RunMC(int n2steps_)
 	}
 
 	std::vector<double> XnLastCol = Xn.back();
+	std::vector<double> Xs(n2steps_);
 
 	for (int i = 0; i < n2steps_; i++)
 	{
-		std::vector<double> tmp(n2steps_);
-		
-		std::transform(XnLastCol.begin(), XnLastCol.end(), Xn[i].begin(), tmp.begin(), std::minus<double>());
-		Xs[i] = std::pow(L2Norm(tmp), 2);
-	}
+		for (int j = 0; j < Xn[0].size(); j++)
+			Xn[i][j] = XnLastCol[j] - Xn[i][j];
 
+		//std::transform(XnLastCol.begin(), XnLastCol.end(), Xn[i].begin(), tmp.begin(), std::minus<double>());
+		Xs[i] = std::pow(L2Norm(Xn[i]),2);
+	}
+	
+	// return the square of the L2norm error
 	return Xs;
 }
 
