@@ -24,7 +24,7 @@ int main()
 	std::cout << "L2norm " << l2n << std::endl;*/
 
 	const int n2start = 6;
-	const int n2steps = 20;
+	const int n2steps = 16;
 	const int M = 1000;
 	
 
@@ -49,7 +49,7 @@ int main()
 	for (int i = 0; i < Xs.size(); i++)
 	{
 		Xs[i] = std::sqrt(Xs[i] / M);
-		std::cout << "2^"<< i << " = " << Xs[i] << std::endl;
+		std::cout << "2^"<< i+n2start << " = " << Xs[i] << std::endl;
 	}
 	std::cout << std::endl;
 	std::cout << "Elapsed time in seconds: " << time << "s" << std::endl;
@@ -73,7 +73,6 @@ std::vector<double> RunMC(int n2start_, int n2steps_)
 
 	std::default_random_engine generator;
 	std::normal_distribution<double> distribution(0.0, 1.0);
-	//std::vector<double> Xs(n2steps_);
 	std::vector<std::vector<double> > Xn(n2length, std::vector<double>(2,1)); // Initialise matrix of ones
 	
 	//Generate Random Number Arrays
