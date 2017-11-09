@@ -7,7 +7,7 @@
 #include <ctime>
 
 std::vector<double> MatrixVecMult(std::vector<std::vector<double> > &, std::vector<double> &);
-std::vector<double> RunMC(int);
+std::vector<double> RunMC(int, int);
 double L2Norm(std::vector<double> &);
 
 
@@ -23,55 +23,58 @@ int main()
 	double l2n = L2Norm(v);
 	std::cout << "L2norm " << l2n << std::endl;*/
 
-	const int n2steps = 10;
-	const int M = 10000;
+	const int n2start = 6;
+	const int n2steps = 20;
+	const int M = 1000;
 	
 
 	//Run Calcs and only save end values
-	std::vector<double> Xs(n2steps);
+	std::vector<double> Xs(n2steps-n2start);
 
 	std::cout << "Running in Serial" << std::endl;
     
 	time_t start = time(0);
 	for (int m = 0; m < M; m++)
 	{
-		std::vector<double> X = RunMC(n2steps);
-		for (int i = 0; i < n2steps; i++)
+		std::vector<double> X = RunMC(n2start,n2steps);
+		for (int i = 0; i < n2steps - n2start; i++)
 			Xs[i] += X[i];
 	}
 	time_t end = time(0);
 	double time = difftime(end, start);
 	
-    
+	std::vector<double> Narr(n2steps - n2start);
+	for (int i = 0; i < n2steps - n2start; i++) { Narr[i] = (int)std::pow(2, i + n2start); }
     // Console Output - the error results
 	for (int i = 0; i < Xs.size(); i++)
 	{
 		Xs[i] = std::sqrt(Xs[i] / M);
-		std::cout << Xs[i] << ", ";
+		std::cout << "2^"<< i << " = " << Xs[i] << std::endl;
 	}
 	std::cout << std::endl;
 	std::cout << "Elapsed time in seconds: " << time << "s" << std::endl;
-	 std::cin.get(); // For VS
+	// std::cin.get(); // For VS
 	return 1;
 }
 
 
-std::vector<double> RunMC(int n2steps_)
+std::vector<double> RunMC(int n2start_, int n2steps_)
 {
 	// SDE Params
 	const double lambda = 2.5;
 	const double mu = 1;
 	const double T = 1;
 	int Nmax;
+	int n2length = n2steps_ - n2start_;
 	std::vector<std::vector<double> > eta = { { 2 / std::sqrt(10), 1 / std::sqrt(10) },{ 1 / std::sqrt(10), 2 / std::sqrt(10) } };
-	std::vector<int> Narr(n2steps_);
-	for (int i = 0; i < n2steps_; i++) { Narr[i] = (int)std::pow(2, i); }
+	std::vector<int> Narr(n2length);
+	for (int i = 0; i < n2length; i++) { Narr[i] = (int)std::pow(2, i + n2start_); }
 	Nmax = Narr.back();
 
 	std::default_random_engine generator;
 	std::normal_distribution<double> distribution(0.0, 1.0);
 	//std::vector<double> Xs(n2steps_);
-	std::vector<std::vector<double> > Xn(n2steps_, std::vector<double>(2,1)); // Initialise matrix of ones
+	std::vector<std::vector<double> > Xn(n2length, std::vector<double>(2,1)); // Initialise matrix of ones
 	
 	//Generate Random Number Arrays
 	std::vector<double> randn1(Nmax);
@@ -84,11 +87,17 @@ std::vector<double> RunMC(int n2steps_)
 
 	for (int n = 0; n < Nmax; n++)
 	{
-		for (int i = 0; i < n2steps_; i++)
+		for (int i = 0; i < n2length; i++)
 		{
-			if (n % Narr[n2steps_ - 1 - i] == 0)
+			if (n % Nmax/Narr[n2length - 1 - i] == 0)
 			{
-				std::vector<double> z = { randn1[n], randn2[n] };
+				double r1 = 0; double r2=0;
+				for(int j =0; j<Nmax/Narr[n2length - 1 - i]; j++)
+				{
+					r1 += randn1[n+j];
+					r2 += randn2[n+j];
+				}
+				std::vector<double> z = { std::sqrt(1/Nmax)*r1, std::sqrt(1/Nmax)*r2 };
 				double h = T / Narr[i];
 				double l2nX = L2Norm(Xn[i]);
 				double tamedCoeff = 1 / (1 + std::pow(n, -1 / 2) * l2nX);
@@ -104,9 +113,9 @@ std::vector<double> RunMC(int n2steps_)
 	}
 
 	std::vector<double> XnLastCol = Xn.back();
-	std::vector<double> Xs(n2steps_);
+	std::vector<double> Xs(n2length);
 
-	for (int i = 0; i < n2steps_; i++)
+	for (int i = 0; i < n2length; i++)
 	{
 		for (int j = 0; j < Xn[0].size(); j++)
 			Xn[i][j] = XnLastCol[j] - Xn[i][j];
