@@ -5,11 +5,16 @@
 #include <math.h>
 #include <algorithm>
 #include <ctime>
+#include <omp.h>
+
 
 std::vector<double> MatrixVecMult(std::vector<std::vector<double> > &, std::vector<double> &);
 std::vector<double> RunMC(int, int);
 double L2Norm(std::vector<double> &);
 
+#pragma omp declare reduction(vec_double_plus : std::vector<double> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                    initializer(omp_priv = omp_orig)
 
 
 int main()
@@ -31,15 +36,28 @@ int main()
 	//Run Calcs and only save end values
 	std::vector<double> Xs(n2steps-n2start);
 
-	std::cout << "Running in Serial" << std::endl;
-    
+	#ifdef _OPENMP
+		std::cout << "Running in parallel" << std::endl;
+    #else
+		std::cout << "Running in Serial" << std::endl;
+	#endif
 	time_t start = time(0);
+
+	int num_threads = 0;
+
+	#pragma omp parallel for reduction(vec_double_plus : Xs)
 	for (int m = 0; m < M; m++)
 	{
+		if(num_threads == 0)
+			num_threads = omp_get_num_threads();
 		std::vector<double> X = RunMC(n2start,n2steps);
 		for (int i = 0; i < n2steps - n2start; i++)
 			Xs[i] += X[i];
 	}
+	
+	std::cout << "Number of threads = " << num_threads << std::endl;
+
+
 	time_t end = time(0);
 	double time = difftime(end, start);
 	
