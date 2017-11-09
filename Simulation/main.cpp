@@ -48,15 +48,23 @@ int main()
 	#pragma omp parallel for reduction(vec_double_plus : Xs)
 	for (int m = 0; m < M; m++)
 	{
+		#ifdef _OPENMP
 		if(num_threads == 0)
 			num_threads = omp_get_num_threads();
+		#else
+			num_threads = 1;
+		#endif
 		std::vector<double> X = RunMC(n2start,n2steps);
 		for (int i = 0; i < n2steps - n2start; i++)
 			Xs[i] += X[i];
 	}
 	
 	std::cout << "Number of threads = " << num_threads << std::endl;
+	std::cout << "Number of simulations = " << M << std::endl;
+	std::cout << "Maximum Step Size = 2^" << n2steps << std::endl << "---------------------------------" << std::endl << std::endl;
+	
 
+	
 
 	time_t end = time(0);
 	double time = difftime(end, start);
