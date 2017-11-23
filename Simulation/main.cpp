@@ -29,7 +29,7 @@ int main()
 	std::cout << "L2norm " << l2n << std::endl;*/
 
 	const int n2start = 6;
-	const int n2steps = 16;
+	const int n2steps = 20;
 	const int M = 1000;
 	
 
@@ -41,9 +41,16 @@ int main()
     #else
 		std::cout << "Running in Serial" << std::endl;
 	#endif
+
+
+	std::cout << "Number of simulations = " << M << std::endl;
+	std::cout << "Maximum Step Size = 2^" << n2steps-1 << std::endl;
+
 	time_t start = time(0);
 
 	int num_threads = 0;
+
+	double wtime = omp_get_wtime();
 
 	#pragma omp parallel for reduction(vec_double_plus : Xs)
 	for (int m = 0; m < M; m++)
@@ -59,9 +66,9 @@ int main()
 			Xs[i] += X[i];
 	}
 	
-	std::cout << "Number of threads = " << num_threads << std::endl;
-	std::cout << "Number of simulations = " << M << std::endl;
-	std::cout << "Maximum Step Size = 2^" << n2steps << std::endl << "---------------------------------" << std::endl << std::endl;
+	double fwtime = omp_get_wtime() - wtime;
+
+	std::cout << "Number of threads = " << num_threads << std::endl << "---------------------------------" << std::endl << std::endl;
 	
 
 	
@@ -78,7 +85,8 @@ int main()
 		std::cout << "2^"<< i+n2start << " = " << Xs[i] << std::endl;
 	}
 	std::cout << std::endl;
-	std::cout << "Elapsed time in seconds: " << time << "s" << std::endl;
+	std::cout << "Elapsed wtime in seconds: " << fwtime << "s" << std::endl;	
+	std::cout << "Elapsed time_t in seconds: " << time << "s" << std::endl;
 	// std::cin.get(); // For VS
 	return 1;
 }
@@ -114,10 +122,10 @@ std::vector<double> RunMC(int n2start_, int n2steps_)
 	{
 		for (int i = 0; i < n2length; i++)
 		{
-			if (n % Nmax/Narr[n2length - 1 - i] == 0)
+			if (n % Narr[n2length - 1 - i] == 0)
 			{
 				double r1 = 0; double r2=0;
-				for(int j =0; j<Nmax/Narr[n2length - 1 - i]; j++)
+				for(int j =0; j< Narr[n2length - 1 - i]; j++)
 				{
 					r1 += randn1[n+j];
 					r2 += randn2[n+j];
@@ -130,22 +138,22 @@ std::vector<double> RunMC(int n2start_, int n2steps_)
 
 				for (int j = 0; j < Xn[i].size(); j++)
 				{
-					Xn[i][j] += Xn[i][j] * (lambda * (mu - l2nX)) * h * tamedCoeff + etaZ[j] * tamedCoeff * std::pow(l2nX, 3 / 2) * std::sqrt(h);
+					Xn[i][j] += Xn[i][j] * (lambda * (mu - l2nX)) * h * tamedCoeff + etaZ[j] * tamedCoeff * std::pow(l2nX, 3 / 2);
 
 				}
 			}
 		}
 	}
 
-	std::vector<double> XnLastCol = Xn.back();
+	std::vector<double> XnEnd = Xn.back();
 	std::vector<double> Xs(n2length);
 
 	for (int i = 0; i < n2length; i++)
 	{
 		for (int j = 0; j < Xn[0].size(); j++)
-			Xn[i][j] = XnLastCol[j] - Xn[i][j];
+			Xn[i][j] = XnEnd[j] - Xn[i][j];
 
-		//std::transform(XnLastCol.begin(), XnLastCol.end(), Xn[i].begin(), tmp.begin(), std::minus<double>());
+		//std::transform(XnEnd.begin(), XnEnd.end(), Xn[i].begin(), tmp.begin(), std::minus<double>());
 		Xs[i] = std::pow(L2Norm(Xn[i]),2);
 	}
 	
