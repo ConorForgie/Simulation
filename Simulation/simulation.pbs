@@ -1,0 +1,26 @@
+#!/bin/bash --login
+#PBS -N sde_simulation
+# Select 1 full node
+#PBS -l select=1:ncpus=72
+# Parallel jobs should always specify exclusive node access
+#PBS -l place=excl
+#PBS -l walltime=00:05:00
+
+# The budget to charge to, this is the project code (in this case the MSc project)
+#PBS -A d154
+
+# Change to the directory that the job was submitted from
+cd $PBS_O_WORKDIR
+
+# Load any required modules
+module load mpt
+module load intel-compilers-17
+module load gcc/6.2.0
+
+# Set the number of threads to 1
+#   This prevents any threaded system libraries from automatically
+#   using threading.
+#export OMP_NUM_THREADS=1
+
+# Launch the parallel job
+./omp_test
