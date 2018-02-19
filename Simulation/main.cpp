@@ -32,9 +32,9 @@ int main()
 
 	// stepsize = 2^-n2start decreasing to 2^-n2steps
 	const int n2start = 6;
-	const int n2steps = 12;
+	const int n2steps = 20;
 	// Run n_trials simulations
-	const int n_trials = 10000;
+	const int n_trials = 1000;
 	
 
 	//Run Calcs and only save end values - we don't care about the history of the path
